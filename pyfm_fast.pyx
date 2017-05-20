@@ -106,7 +106,8 @@ cdef class FM_fast(object):
                   int shuffle_training,
                   int task,
                   int seed,
-                  int verbose):
+                  int verbose,
+                  int early_stopping):
 
         self.w0 = w0
         self.w = w
@@ -129,6 +130,7 @@ cdef class FM_fast(object):
         self.shuffle_training = shuffle_training
         self.seed = seed
         self.verbose = verbose
+        self.early_stopping = early_stopping
 
         self.reg_0 = 0.0
         self.reg_w = 0.0
@@ -405,6 +407,11 @@ cdef class FM_fast(object):
         cdef DOUBLE sample_weight = 1.0
         cdef DOUBLE validation_sample_weight = 1.0
 
+        # variables for early stopping
+        cdef MY_MAX = float(sys.maxint)
+        cdef DOUBLE previous_loss = MY_MAX
+        cdef DOUBLE curr_loss
+
         for epoch in range(self.n_iter):
     
             if self.verbose > 0:
@@ -428,7 +435,15 @@ cdef class FM_fast(object):
                                           validation_xnnz, validation_y)
             if self.verbose > 0:
                 error_type = "MSE" if self.task == REGRESSION else "log loss"
-                print "Training %s: %.5f" % (error_type, (self.sumloss / self.count))
+                if self.early_stopping > 0:
+                    curr_loss = self.sumloss / self.count
+                    if curr_loss <= previous_loss :
+                        previous_loss = curr_loss
+                     else:
+                        print "Loss is not decreasing. Early stopping. \n"
+                        print "Training %s: %.5f" % (error_type, curr_loss)
+                        break
+                print "Training %s: %.5f" % (error_type, curr_loss)
 
 cdef inline double max(double a, double b):
     return a if a >= b else b

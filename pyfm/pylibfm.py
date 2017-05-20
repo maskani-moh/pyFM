@@ -62,6 +62,7 @@ class FM:
                  t0=0.001,
                  task='classification',
                  verbose=True,
+                 early_stopping=False,
                  shuffle_training=True,
                  seed = 28):
 
@@ -96,6 +97,9 @@ class FM:
         self.sum_f = 0.0
         self.sum_f_dash_f = 0.0
         self.verbose = verbose
+
+        # early stopping
+        self.early_stopping = early_stopping
 
     def _validate_params(self):
         """Validate input params. """
@@ -205,7 +209,8 @@ class FM:
                                shuffle_training,
                                task,
                                self.seed,
-                               verbose)
+                               verbose,
+                               self._bool_to_int(self.early_stopping))
 
         return self.fm_fast.fit(X_train_dataset, validation_dataset)
 
